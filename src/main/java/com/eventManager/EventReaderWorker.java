@@ -1,25 +1,26 @@
-package main.java.com.sequentializer;
+package main.java.com.eventManager;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.BlockingQueue;
 
 public class EventReaderWorker implements Runnable{
 	
 	private int tcpPort = 0;
 	private ServerSocketChannel eventReaderSocket = null;
-	private ByteBuffer eventBuf = ByteBuffer.allocate(1024); 
+	private ByteBuffer eventBuf = ByteBuffer.allocate(1024);
+	private BlockingQueue<String> messageQueue;
 
 	
-	public EventReaderWorker(int tcpPort) throws IOException {
+	public EventReaderWorker(int tcpPort, BlockingQueue<String> messageQueue) throws IOException {
 		this.tcpPort = tcpPort;
+		this.messageQueue = messageQueue;
  	}
 	
-	public boolean tokenize(SocketChannel eventReaderSocketChannel) throws IOException {
+	public boolean tokenize(SocketChannel eventReaderSocketChannel) throws IOException, InterruptedException {
 		char bufChar;
 		String message = "";
 		long readSize = eventReaderSocketChannel.read(this.eventBuf);
@@ -32,6 +33,7 @@ public class EventReaderWorker implements Runnable{
 				} else {
 					message += '\n';
 					System.out.print(message);
+					this.messageQueue.put(message);
 					message = "";
 				}
 			}
@@ -53,7 +55,7 @@ public class EventReaderWorker implements Runnable{
             while(true) {
             	this.tokenize(eventReaderSocketChannel);
     		}
-        } catch(IOException e){
+        } catch(IOException | InterruptedException e){
             e.printStackTrace();
             return;
         }

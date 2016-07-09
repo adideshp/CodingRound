@@ -1,4 +1,4 @@
-package main.java.com.connectionManager;
+package main.java.com.clientManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

@@ -2,8 +2,8 @@ package main.java.com;
 
 import java.io.IOException;
 
-import main.java.com.connectionManager.ConnectionManager;
-import main.java.com.sequentializer.EventReader;
+import main.java.com.clientManager.ConnectionManager;
+import main.java.com.eventManager.EventReader;
 
 public class FollowerMaze {
 
