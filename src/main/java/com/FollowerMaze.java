@@ -2,15 +2,17 @@ package main.java.com;
 
 import java.io.IOException;
 
+import main.java.com.connectionManager.ConnectionManager;
+import main.java.com.sequentializer.EventReader;
+
 public class FollowerMaze {
 
 	public static void main(String[] args) {
 		try {
 			EventReader eventReader = new EventReader(9090);
-			ConnectionManager conMan = new ConnectionManager(9099);
-			Thread connectionWorkerThread  = new Thread(conMan);
+			ConnectionManager connManager = new ConnectionManager(9099);
 			eventReader.start();
-			connectionWorkerThread.start();
+			connManager.start();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -1,4 +1,4 @@
-package main.java.com;
+package main.java.com.sequentializer;
 
 import java.io.IOException;
 
