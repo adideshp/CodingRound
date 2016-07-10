@@ -23,31 +23,44 @@ public class MessageSequencer implements Runnable{
 		return true;
 	}
 	
+	public String getMsgFromQueue() {
+		String message;
+		while ((message = this.messageQueue.poll()) != null) {
+			System.out.println("Fetch from queue by MessageSequencer");
+			return message;
+		}
+		return null;
+	}
+	
 	@Override
 	public void run() {
 		System.out.println("Starting the MessageSequencer Thread...");
 		String message;
+		Message msgObj;
 		while(true) {
-			while ((message = this.messageQueue.poll()) != null) {
-				System.out.println("Fetch from queue by MessageSequencer");
-				Message msg = new Message(message);
-				if (isDefyingSequence(msg.getSequenceNum(), this.lastValidMsgPushed)) {
+			message = this.getMsgFromQueue();
+			if (message != null) {
+				msgObj = new Message(message);
+				
+				if (isDefyingSequence(msgObj.getSequenceNum(), this.lastValidMsgPushed)) {
 					System.out.println("Message:"+ message + " not in order. Adding in buffer");
-					this.messageBuffer.addMsgInBuffer(msg);
+					this.messageBuffer.addMsgInBuffer(msgObj);
 				} else {
 					this.orderedMsgQueue.add(message);
-					this.lastValidMsgPushed = msg.getSequenceNum();
+					this.lastValidMsgPushed = msgObj.getSequenceNum();
 					System.out.println("Message:"+ message + " added to orderedQueue");
 				}
-				// Check if the messageBuffer has any messages that can go in orderedMsgQueue
-				message = this.messageBuffer.getMsgFromBuffer(this.lastValidMsgPushed + 1);
-				if (message != null) {
-					//There is a valid message
-					msg = new Message(message);
-					this.orderedMsgQueue.add(message);
-					this.lastValidMsgPushed = msg.getSequenceNum();
-					System.out.println("Message:"+ message + " added to orderedQueue");
-				}
+			}
+			
+			// Check if the messageBuffer has any messages that can go in orderedMsgQueue
+			
+			message = this.messageBuffer.getMsgFromBuffer(this.lastValidMsgPushed + 1);
+			if (message != null) {
+				//There is a valid message
+				msgObj = new Message(message);
+				this.orderedMsgQueue.add(message);
+				this.lastValidMsgPushed = msgObj.getSequenceNum();
+				System.out.println("Message:"+ message + " added to orderedQueue");
 			}
 		}
 	}

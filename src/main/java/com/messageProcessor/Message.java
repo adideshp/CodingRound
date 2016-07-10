@@ -11,24 +11,31 @@ public class Message {
 	public Message(String message) {
 		this.stringMsg = message;
 		
-		String[] msgParts;
-		msgParts = message.split("|");
+		String[] validStr, msgParts;
+		validStr = message.split("\\\n");
+		msgParts = validStr[0].split("\\|");
 		this.sequenceNum = -1;
 		this.msgType = null;
 		this.source = -1;
 		this.destination = -1;
 		try {
-			this.sequenceNum = Long.parseLong(msgParts[0]);
-			this.msgType = msgParts[1];
-			this.source = Long.parseLong(msgParts[2]);
-			this.destination = Long.parseLong(msgParts[3]);
+			if (msgParts.length >=2) {
+				this.sequenceNum = Long.parseLong(msgParts[0]);
+				this.msgType = msgParts[1];
+				if (msgParts.length >=3) {
+					this.source = Long.parseLong(msgParts[2]);
+					if (msgParts.length ==4) {
+						this.destination = Long.parseLong(msgParts[3]);
+					}
+				}
+			}
 		} catch (NumberFormatException e) {
 			return;
 		}		
 	}
 	
 	public String getStringMsg() {
-		return this.stringMsg;
+		return this.stringMsg + "\r\n";
 	}
 	
 	public long getSequenceNum() {
@@ -42,7 +49,6 @@ public class Message {
 	public long getSource() {
 		return this.source;
 	}
-
 
 	public long getDestination() {
 		return this.destination;

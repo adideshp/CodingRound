@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import main.java.com.clientManager.Client;
@@ -12,10 +12,10 @@ import main.java.com.clientManager.Client;
 public class MessageHandler implements Runnable{
 
 	private ConcurrentLinkedQueue<String> orderedMsgQueue;
-	private Map<Long, Client> clientIdToClentObjMap;
+	private ConcurrentHashMap<Long, Client> clientIdToClentObjMap;
 	
 	
-	public MessageHandler(ConcurrentLinkedQueue<String> orderedMsgQueue, Map<Long, Client> clientIdToClentObjMap) {
+	public MessageHandler(ConcurrentLinkedQueue<String> orderedMsgQueue, ConcurrentHashMap<Long, Client> clientIdToClentObjMap) {
 		this.orderedMsgQueue = orderedMsgQueue;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 	}
@@ -24,29 +24,38 @@ public class MessageHandler implements Runnable{
 		System.out.println("Message type Follow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
-		source.subscribe(destination.getId());
-		SelectionKey key = destination.getSelectionKey();
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		while(true) {
-			if (key.isWritable()) {
-				destination.writeToChannel(message.getStringMsg(), socketChannel);
-				return true;
+		if(destination != null) {
+			if (source !=null) {source.subscribe(destination.getId());}
+			SelectionKey key = destination.getSelectionKey();
+			SocketChannel socketChannel = (SocketChannel) key.channel();
+			while(true) {
+				if (key.isWritable()) {
+					destination.writeToChannel(message.getStringMsg(), socketChannel);
+					System.out.println("Follow msg sent to:" + destination.getId());
+					return true;
+				}
 			}
 		}
+		return false;
+		
 	}
 	
 	public boolean handleUnfollow(Message message) {
 		System.out.println("Message type Unfollow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
-		source.unsubscribe(destination.getId());
-		return true;
+		if(source != null & destination != null) {
+			source.unsubscribe(destination.getId());
+			System.out.println("Unsubscribed successfully : " + destination.getId());
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean handleBroadcast(Message message) throws IOException {
 		System.out.println("Message type Broadcast detected" + message.getStringMsg() );
 		Client client;
-		for (Map.Entry<Long, Client> entry : this.clientIdToClentObjMap.entrySet())
+		for (ConcurrentHashMap.Entry<Long, Client> entry : this.clientIdToClentObjMap.entrySet())
 		{	
 			client = entry.getValue();
 			SelectionKey key = client.getSelectionKey();
@@ -54,6 +63,7 @@ public class MessageHandler implements Runnable{
 			while(true) {
 				if (key.isWritable()) {
 					client.writeToChannel(message.getStringMsg(), socketChannel);
+					System.out.println("Broadcast msg sent to:" + client.getId());
 					break;
 				}
 			}
@@ -63,36 +73,46 @@ public class MessageHandler implements Runnable{
 	
 	
 	public boolean handlePrivateMsg(Message message) throws IOException {
-		System.out.println("Message type PrivateMsg detected" + message.getStringMsg() );
+		System.out.println("Message type PrivateMsg detected : " + message.getStringMsg() );
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
-		SelectionKey key = destination.getSelectionKey();
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		while(true) {
-			if (key.isWritable()) {
-				destination.writeToChannel(message.getStringMsg(), socketChannel);
-				return true;
-			}
-		}
-	}
-	
-	public boolean handleStatusUpdate(Message message) throws IOException {
-		System.out.println("Message type Status Update detected" + message.getStringMsg() );
-		Client client;
-		Client source = this.clientIdToClentObjMap.get(message.getSource());
-		LinkedList<Long> subscribers = source.getSubscribers();
-		for (Long subscriber : subscribers)
-		{	
-			client = this.clientIdToClentObjMap.get(subscriber);
-			SelectionKey key = client.getSelectionKey();
+		if (destination != null) {
+			SelectionKey key = destination.getSelectionKey();
 			SocketChannel socketChannel = (SocketChannel) key.channel();
 			while(true) {
 				if (key.isWritable()) {
-					client.writeToChannel(message.getStringMsg(), socketChannel);
-					break;
+					destination.writeToChannel(message.getStringMsg(), socketChannel);
+					System.out.println("Private msg sent to:" +  destination.getId());
+					return true;
 				}
 			}
 		}
-		return true;
+		return false;
+	}
+	
+	public boolean handleStatusUpdate(Message message) throws IOException {
+		System.out.println("Message type Status Update detected : " + message.getStringMsg() );
+		Client client;
+		Client source = this.clientIdToClentObjMap.get(message.getSource());
+		if(source !=null){
+			LinkedList<Long> subscribers = source.getSubscribers();
+			for (Long subscriber : subscribers)
+			{	
+				client = this.clientIdToClentObjMap.get(subscriber);
+				if (client != null) {
+					SelectionKey key = client.getSelectionKey();
+					SocketChannel socketChannel = (SocketChannel) key.channel();
+					while(true) {
+						if (key.isWritable()) {
+							client.writeToChannel(message.getStringMsg(), socketChannel);
+							System.out.println("Status update msg sent to:" +  client.getId());
+							break;
+						}
+					}
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	
@@ -118,9 +138,15 @@ public class MessageHandler implements Runnable{
 			break;
 		}
 	}
+	
 
 	@Override
 	public void run() {
+		try {
+			Thread.sleep(5000); // To fill the clientIdToClentObjMap Map with clients
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
 		System.out.println("Starting the MessageHandler Thread...");
 		String message;
 		while(true) {

@@ -1,7 +1,6 @@
 package main.java.com;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -13,7 +12,7 @@ import main.java.com.messageProcessor.MessageProcessor;
 public class Server {
 
 	private ConcurrentLinkedQueue<String> messageQueue;
-	private Map<Long, Client> clientIdToClentObjMap;
+	private ConcurrentHashMap<Long, Client> clientIdToClentObjMap;
 	private int clientPort; 
 	private int eventPort; 
 	
@@ -28,7 +27,7 @@ public class Server {
 		try {	
 			System.out.println("Server starting ...");
 			EventManager eventReader = new EventManager(this.eventPort, this.messageQueue);
-			ConnectionManager connManager = new ConnectionManager(this.clientPort);
+			ConnectionManager connManager = new ConnectionManager(this.clientPort, this.clientIdToClentObjMap);
 			MessageProcessor messageProcessor = new MessageProcessor(this.messageQueue, this.clientIdToClentObjMap);
 			eventReader.start();
 			connManager.start();

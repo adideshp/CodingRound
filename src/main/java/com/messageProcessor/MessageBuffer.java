@@ -15,17 +15,15 @@ public class MessageBuffer {
 		this.earlyMsgBuffer = new LinkedList<Message>();
 	}
 	
-
-	public boolean updateFloorCeilSeqNum(long seqNum) {
-		if (seqNum < this.floorSeqNum) {this.floorSeqNum = seqNum;}
-		if (seqNum > this.ceilSeqNum) {this.ceilSeqNum = seqNum;}
-		return true;
-	}
 	
 	public void addMsgInBuffer(Message message) {
 		long seqNum = message.getSequenceNum();
 		if (seqNum < this.floorSeqNum) {
 			this.floorSeqNum = seqNum;
+			if (seqNum > this.ceilSeqNum) {
+				// Case for first message
+				this.ceilSeqNum = seqNum;
+			}
 			this.earlyMsgBuffer.addFirst(message);
 		}
 		else if (seqNum > this.ceilSeqNum) {
@@ -46,15 +44,21 @@ public class MessageBuffer {
 	}
 	
 	public String getMsgFromBuffer(long seqNum) {
-		if(this.earlyMsgBuffer.isEmpty()) {
-			if (seqNum < this.floorSeqNum || seqNum > this.ceilSeqNum) {
-				return null;
-			} else if(seqNum == this.floorSeqNum) {
-				String msg = this.earlyMsgBuffer.removeFirst().getStringMsg();
-				this.floorSeqNum = this.earlyMsgBuffer.peekFirst().getSequenceNum();
-				return msg;
-			} 
-		} 
+		
+			if(!this.earlyMsgBuffer.isEmpty()) {
+				if (seqNum < this.floorSeqNum || seqNum > this.ceilSeqNum) {
+					return null;
+				} else if(seqNum == this.floorSeqNum) {
+					String msg = this.earlyMsgBuffer.removeFirst().getStringMsg();
+					try {
+					this.floorSeqNum = this.earlyMsgBuffer.peekFirst().getSequenceNum();
+					} catch(NullPointerException e) {
+						this.floorSeqNum = 999999999;
+					}
+					return msg;
+				} 
+			}
+		
 		return null;
 	}
 	

@@ -5,8 +5,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ConnectionProcessor implements Runnable{
@@ -14,9 +14,9 @@ public class ConnectionProcessor implements Runnable{
 	private ConcurrentLinkedQueue<SocketChannel> channelQueue;
 	private Selector channelSelector; 
 	private int clientCount;
-	private Map<Long, Client> clientIdToClentObjMap; // Concurrent hash map
+	private ConcurrentHashMap<Long, Client> clientIdToClentObjMap; // Concurrent hash map
 	
-	public ConnectionProcessor(ConcurrentLinkedQueue<SocketChannel> channelQueue, Selector channelSelector, Map<Long, Client> clientIdToClentObjMap){
+	public ConnectionProcessor(ConcurrentLinkedQueue<SocketChannel> channelQueue, Selector channelSelector, ConcurrentHashMap<Long, Client> clientIdToClentObjMap){
 		this.channelQueue = channelQueue;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 		this.channelSelector = channelSelector;
@@ -50,7 +50,7 @@ public class ConnectionProcessor implements Runnable{
 		    	Client client = (Client) key.attachment();
 		    	long id = Long.parseLong(client.readFromChannel(channel));
 		    	client.setId(id);
-		    	System.out.println("Update successful for Client with ID:" + id);
+		    	System.out.println("ID Update successful for Client with ID:" + id);
 		    	this.clientIdToClentObjMap.put(id, client);
 		    	System.out.println("Updated MAP for Client with ID:" + id);
 		    } 

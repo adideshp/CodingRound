@@ -1,6 +1,6 @@
 package main.java.com.messageProcessor;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import main.java.com.clientManager.Client;
@@ -9,9 +9,9 @@ public class MessageProcessor {
 
 	private ConcurrentLinkedQueue<String> messageQueue;
 	private ConcurrentLinkedQueue<String> orderedMsgQueue;
-	private Map<Long, Client> clientIdToClentObjMap;
+	private ConcurrentHashMap<Long, Client> clientIdToClentObjMap;
 	
-	public MessageProcessor(ConcurrentLinkedQueue<String> messageQueue, Map<Long, Client> clientIdToClentObjMap) {
+	public MessageProcessor(ConcurrentLinkedQueue<String> messageQueue, ConcurrentHashMap<Long, Client> clientIdToClentObjMap) {
 		this.messageQueue = messageQueue;
 		this.orderedMsgQueue =  new ConcurrentLinkedQueue<String>();
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
