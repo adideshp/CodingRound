@@ -9,6 +9,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import main.java.com.clientManager.Client;
 
+/*@description: Responsible for reading ordered message from orderedMsgQueue and
+ * handling the messages i.e, sending them to the respective clients 
+ * 
+ * */
 public class MessageHandler implements Runnable{
 
 	private ConcurrentLinkedQueue<String> orderedMsgQueue;
@@ -20,10 +24,11 @@ public class MessageHandler implements Runnable{
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 	}
 	
+	// Handles message of type F- Follow
 	public boolean handleFollow(Message message) throws IOException {
-		System.out.println("Message type Follow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
+		// Destination is valid
 		if(destination != null) {
 			if (source !=null) {source.subscribe(destination.getId());}
 			SelectionKey key = destination.getSelectionKey();
@@ -31,7 +36,7 @@ public class MessageHandler implements Runnable{
 			while(true) {
 				if (key.isWritable()) {
 					destination.writeToChannel(message.getStringMsg(), socketChannel);
-					System.out.println("Follow msg sent to:" + destination.getId());
+					System.out.println("[MessageHandler-Thread][handleFollow] Follow msg sent to: " + destination.getId() + ".Message:" + message.getStringMsg());
 					return true;
 				}
 			}
@@ -40,20 +45,21 @@ public class MessageHandler implements Runnable{
 		
 	}
 	
+	//Handles message of type U- Unfollow
 	public boolean handleUnfollow(Message message) {
-		System.out.println("Message type Unfollow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
+		// If source and destination are valid
 		if(source != null & destination != null) {
 			source.unsubscribe(destination.getId());
-			System.out.println("Unsubscribed successfully : " + destination.getId());
+			System.out.println("[MessageHandler-Thread][handleUnfollow] Unsubscribed successfully : " + destination.getId()+ ".Message:" + message.getStringMsg());
 			return true;
 		}
 		return false;
 	}
 	
+	//Handles message of type B-Broadcast
 	public boolean handleBroadcast(Message message) throws IOException {
-		System.out.println("Message type Broadcast detected" + message.getStringMsg() );
 		Client client;
 		for (ConcurrentHashMap.Entry<Long, Client> entry : this.clientIdToClentObjMap.entrySet())
 		{	
@@ -63,7 +69,7 @@ public class MessageHandler implements Runnable{
 			while(true) {
 				if (key.isWritable()) {
 					client.writeToChannel(message.getStringMsg(), socketChannel);
-					System.out.println("Broadcast msg sent to:" + client.getId());
+					System.out.println("[MessageHandler-Thread][handleBroadcast] Broadcast msg sent to:" + client.getId() + ".Message:" + message.getStringMsg());
 					break;
 				}
 			}
@@ -71,9 +77,8 @@ public class MessageHandler implements Runnable{
 		return true;
 	}
 	
-	
+	//Handles message of type P- Private Message
 	public boolean handlePrivateMsg(Message message) throws IOException {
-		System.out.println("Message type PrivateMsg detected : " + message.getStringMsg() );
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
 		if (destination != null) {
 			SelectionKey key = destination.getSelectionKey();
@@ -81,7 +86,7 @@ public class MessageHandler implements Runnable{
 			while(true) {
 				if (key.isWritable()) {
 					destination.writeToChannel(message.getStringMsg(), socketChannel);
-					System.out.println("Private msg sent to:" +  destination.getId());
+					System.out.println("[MessageHandler-Thread][handlePrivateMsg] Private msg sent to:" +  destination.getId()+ ".Message:" + message.getStringMsg());
 					return true;
 				}
 			}
@@ -89,10 +94,11 @@ public class MessageHandler implements Runnable{
 		return false;
 	}
 	
+	//Handles message of type S- Status Update
 	public boolean handleStatusUpdate(Message message) throws IOException {
-		System.out.println("Message type Status Update detected : " + message.getStringMsg() );
 		Client client;
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
+		//check source is valid
 		if(source !=null){
 			LinkedList<Long> subscribers = source.getSubscribers();
 			for (Long subscriber : subscribers)
@@ -104,7 +110,7 @@ public class MessageHandler implements Runnable{
 					while(true) {
 						if (key.isWritable()) {
 							client.writeToChannel(message.getStringMsg(), socketChannel);
-							System.out.println("Status update msg sent to:" +  client.getId());
+							System.out.println("[MessageHandler-Thread][handlePrivateMsg] Status update msg sent to:" +  client.getId() + ".Message:" + message.getStringMsg());
 							break;
 						}
 					}
@@ -115,9 +121,8 @@ public class MessageHandler implements Runnable{
 		return false;
 	}
 
-	
+	//Distributes the message for processing based on the type
 	public void processMessage(Message message) throws IOException {
-		System.out.println("Processing Message:"+ message.getStringMsg());
 		switch(message.getMsgType()) {
 		case "F":
 			handleFollow(message);
@@ -143,15 +148,16 @@ public class MessageHandler implements Runnable{
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(5000); // To fill the clientIdToClentObjMap Map with clients
+			// To fill the clientIdToClentObjMap Map with clients
+			Thread.sleep(5000); 
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
-		System.out.println("Starting the MessageHandler Thread...");
+		System.out.println("[MessageHandler-Thread][run]Starting the MessageHandler Thread...");
 		String message;
 		while(true) {
+			// Fetch message from orderedMsgQueue - MessageSequencer
 			while ((message = this.orderedMsgQueue.poll()) != null) {
-				System.out.println("Fetch from queue by MessageSequencer");
 				Message msg = new Message(message);
 				try {
 					this.processMessage(msg);

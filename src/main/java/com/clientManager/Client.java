@@ -6,10 +6,15 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 
+/*@description: Template for storing a client.
+ * 
+ * */
 public class Client {
 
 	private long id;
+	// List of all the subscribers
 	private LinkedList<Long> subscribers;
+	// selectionKey to fetch channel for read/write
 	private SelectionKey selectionKey;
 	
 	public Client(long id, SelectionKey selectionKey) {
@@ -34,12 +39,13 @@ public class Client {
 		return this.subscribers;
 	}
 	
-	
+	//Add client ID in the list of subscribers
 	public boolean subscribe(long l) {
 		this.subscribers.add(l);
 		return true;
 	}
 	
+	//Remove client ID in the list of subscribers
 	public boolean unsubscribe(long clientId) {
 		if (this.subscribers.contains(clientId)) {
 			this.subscribers.remove(clientId);
@@ -48,6 +54,7 @@ public class Client {
 		return false;
 	}
 	
+	//Reads data from a given channel
 	public String readFromChannel(SocketChannel socketChannel) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(100);
 		char bufChar;
@@ -64,6 +71,7 @@ public class Client {
 		return value;
 	}
 	
+	// writes data to a given channel
 	public int writeToChannel(String msg, SocketChannel socketChannel) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(100);
 		byte[] bytes = msg.getBytes();

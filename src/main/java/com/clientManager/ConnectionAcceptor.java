@@ -5,14 +5,15 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+/*@description: Responsible for accepting connections and adding their handles in a shared queue.
+ * */
 public class ConnectionAcceptor implements Runnable{
 
 	private int port;
 	private ServerSocketChannel serverSocket = null;
 	private  ConcurrentLinkedQueue<SocketChannel> channelQueue;
 	
-	private int count=0;
+	private int connectionCount=0;
 	
 	public ConnectionAcceptor(int port,  ConcurrentLinkedQueue<SocketChannel> channelQueue) {
 		this.port = port;
@@ -23,7 +24,8 @@ public class ConnectionAcceptor implements Runnable{
 	@Override
 	public void run() {
 		try{
-			System.out.println("Starting the ConnectionAcceptor thread ...");
+			//Creating a ServerSocket
+			System.out.println("[ConnectionAcceptor-Thread][run] Starting the ConnectionAcceptor thread ...");
             this.serverSocket = ServerSocketChannel.open();
             this.serverSocket.bind(new InetSocketAddress(this.port));
         } catch(IOException e){
@@ -34,12 +36,11 @@ public class ConnectionAcceptor implements Runnable{
         while(true){
             try{
                 SocketChannel socketChannel = this.serverSocket.accept();
-                System.out.println("Connection accepted");
-                this.count++;
-                System.out.println("Connection Count : " + this.count );
+                System.out.println("[ConnectionAcceptor-Thread][run] Connection accepted");
+                this.connectionCount++;
+                System.out.println("[ConnectionAcceptor-Thread][run] Connection Count : " + this.connectionCount );
                 this.channelQueue.add(socketChannel);
-                System.out.println("Channel added to the queue");
-                
+                System.out.println("[ConnectionAcceptor-Thread][run] Channel added to the channelQueue");
             } catch(IOException e){
                 e.printStackTrace();
             }

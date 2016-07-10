@@ -1,5 +1,8 @@
 package main.java.com.messageProcessor;
 
+
+/*@description : Utility class for accessing the values in the message
+ * */
 public class Message {
 
 	private String stringMsg;

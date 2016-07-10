@@ -7,11 +7,16 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/*@description: Responsible for reading messages from the event source and 
+ * adding them in the message queue.
+ * 
+ * */
 public class EventReader implements Runnable{
 	
 	private int tcpPort = 0;
 	private ServerSocketChannel eventReaderSocket = null;
 	private ByteBuffer eventBuf = ByteBuffer.allocate(1024);
+	//Shared Data structure
 	private ConcurrentLinkedQueue<String> messageQueue;
 	
 
@@ -21,6 +26,9 @@ public class EventReader implements Runnable{
 		this.messageQueue = messageQueue;
  	}
 	
+	/*Read Event source channel and tokenize the messages from the byte stream.
+	 * Add the messages in the shared messageQueue for further processing.
+	 */
 	public boolean tokenize(SocketChannel eventReaderSocketChannel) throws IOException, InterruptedException {
 		char bufChar;
 		String message = "";
@@ -34,7 +42,7 @@ public class EventReader implements Runnable{
 				} else {
 					message += '\n';
 					this.messageQueue.add(message);
-					System.out.println("Message" + message + " added in queue");
+					System.out.println("[EventReader-Thread][tokenize] Message: " + message + " added in messageQueue");
 					message = "";
 				}
 			}
@@ -44,14 +52,18 @@ public class EventReader implements Runnable{
 	}
 	
 	
+
 	@Override
 	public void run() {
 		try{
-			System.out.println("Starting the EventReader Thread ...");
+			//Create a Channel for communicating with the Event source.
+			System.out.println("[EventReader-Thread][run] Starting the EventReader Thread ...");
             this.eventReaderSocket = ServerSocketChannel.open();
-            this.eventReaderSocket.bind(new InetSocketAddress(tcpPort));
+            this.eventReaderSocket.bind(new InetSocketAddress(this.tcpPort));
             SocketChannel eventReaderSocketChannel = this.eventReaderSocket.accept();
-            System.out.println("Event source connected successfully on port :" + this.tcpPort);
+            System.out.println("[EventReader-Thread][run] Event source connected successfully on port :" + this.tcpPort);
+            eventReaderSocket.close();
+            // Read channel for Messages
             while(true) {
             	this.tokenize(eventReaderSocketChannel);
     		}

@@ -9,40 +9,45 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/*@description: Responsible for adding channels to selector, binding the SelectionKey with the client,
+ * updating the client IDs and updating the clientIdToClentObjMap Map.
+ * */
 public class ConnectionProcessor implements Runnable{
 
 	private ConcurrentLinkedQueue<SocketChannel> channelQueue;
 	private Selector channelSelector; 
-	private int clientCount;
+	//Shared Data Structure with MessageProcessor
 	private ConcurrentHashMap<Long, Client> clientIdToClentObjMap; // Concurrent hash map
 	
-	public ConnectionProcessor(ConcurrentLinkedQueue<SocketChannel> channelQueue, Selector channelSelector, ConcurrentHashMap<Long, Client> clientIdToClentObjMap){
+	public ConnectionProcessor(ConcurrentLinkedQueue<SocketChannel> channelQueue, ConcurrentHashMap<Long, Client> clientIdToClentObjMap) throws IOException{
 		this.channelQueue = channelQueue;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
-		this.channelSelector = channelSelector;
-		this.clientCount = 0;
+		this.channelSelector = Selector.open();
 	}
 	
-	
+	/*@description : Create a client and attach it to the SelectionKey 
+	 * */
 	public boolean createClient(SocketChannel socketChannel, Selector channelSelector) throws IOException {
 		socketChannel.configureBlocking(false);
+
 		SelectionKey selectionKey = socketChannel.register(this.channelSelector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+		// client id is not yet available hence initializing it with -1
 		Client client = new Client(-1,selectionKey);
 		selectionKey.attach(client);
-		this.clientCount++;
-		System.out.println("Client " + this.clientCount +" attached Successfully...");
 		return true;
 	}
 	
-	
+	/*@description : Get Id by reading the client channel and update the Client and the 
+	 * clientIdToClentObjMap Map.
+	 * */
 	public void updateIdForReadReadyClients(Selector channelSelector) throws IOException {
-		System.out.println("Updating ID for ReadReadyClients");
 		int readyChannels = channelSelector.selectNow();
 		if(readyChannels == 0) return;
 		
 		Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
 		Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 		
+		//Check for all the read ready channels
 		while(keyIterator.hasNext()) {
 		    SelectionKey key = keyIterator.next();
 		    if (key.isReadable()) {
@@ -50,9 +55,8 @@ public class ConnectionProcessor implements Runnable{
 		    	Client client = (Client) key.attachment();
 		    	long id = Long.parseLong(client.readFromChannel(channel));
 		    	client.setId(id);
-		    	System.out.println("ID Update successful for Client with ID:" + id);
+		    	System.out.println("[ConnectionProcessor-Thread][updateIdForReadReadyClients] Client ID :" + id + " mapped");
 		    	this.clientIdToClentObjMap.put(id, client);
-		    	System.out.println("Updated MAP for Client with ID:" + id);
 		    } 
 		    keyIterator.remove();
 	    }
@@ -61,12 +65,12 @@ public class ConnectionProcessor implements Runnable{
 
 	@Override
 	public void run() {
-		System.out.println("Starting the connection processor worker thread ...");
+		System.out.println("[ConnectionProcessor-Thread][run] Starting the connection processor worker thread ...");
 		SocketChannel socketChannel;
 		while(true) {
 			try {
+				//Fetch channel from channelQueue
 				while ((socketChannel = this.channelQueue.poll()) != null) {
-					System.out.println("Fetched channel from queue");
 					this.createClient(socketChannel, this.channelSelector);
 					this.updateIdForReadReadyClients(channelSelector);
 		        }

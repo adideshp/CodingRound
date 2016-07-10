@@ -3,6 +3,9 @@ package main.java.com.eventManager;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/*@description : Responsible for managing the events from the event source and returning them in a queue
+ * to the MessageSequencer
+ * */
 public class EventManager {
 
 	private EventReader eventWorker = null;
@@ -15,7 +18,7 @@ public class EventManager {
 	}
 		
 	public void start() {
-		System.out.println("Starting the EventManager ...");
+		System.out.println("[EventManager][start] Starting the EventManager ...");
 		Thread eventWorkerThread  = new Thread(this.eventWorker);
 		eventWorkerThread.start();
 	}
