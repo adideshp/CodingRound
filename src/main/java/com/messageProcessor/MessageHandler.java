@@ -1,8 +1,7 @@
-package main.java.com.eventManager;
+package main.java.com.messageProcessor;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Map;
@@ -13,13 +12,11 @@ import main.java.com.clientManager.Client;
 public class MessageHandler implements Runnable{
 
 	private BlockingQueue<String> orderedMsgQueue;
-	private Selector channelSelector;
 	private Map<Long, Client> clientIdToClentObjMap;
 	
 	
-	public MessageHandler(BlockingQueue<String> orderedMsgQueue, Selector channelSelector, Map<Long, Client> clientIdToClentObjMap) {
+	public MessageHandler(BlockingQueue<String> orderedMsgQueue, Map<Long, Client> clientIdToClentObjMap) {
 		this.orderedMsgQueue = orderedMsgQueue;
-		this.channelSelector = channelSelector;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 	}
 	

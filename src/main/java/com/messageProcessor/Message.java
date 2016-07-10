@@ -1,4 +1,4 @@
-package main.java.com.eventManager;
+package main.java.com.messageProcessor;
 
 public class Message {
 
@@ -37,6 +37,7 @@ public class Message {
 
 	public long getDestination() {
 		return this.destination;
-	}	
+	}
+
 
 }
