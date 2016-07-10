@@ -36,8 +36,11 @@ public class MessageBuffer {
 			int index=0;
 			for(Message msg: this.earlyMsgBuffer) {
 				long tempSeqNum = msg.getSequenceNum();
-				if((seqNum-tempSeqNum) < 0) {this.earlyMsgBuffer.add(index, message);}
+				if((seqNum-tempSeqNum) < 0) break;
 				index++;
+			}
+			if (index !=0) {
+				this.earlyMsgBuffer.add(index, message);
 			}
 		}
 	}

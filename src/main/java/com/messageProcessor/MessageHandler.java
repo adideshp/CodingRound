@@ -5,22 +5,23 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import main.java.com.clientManager.Client;
 
 public class MessageHandler implements Runnable{
 
-	private BlockingQueue<String> orderedMsgQueue;
+	private ConcurrentLinkedQueue<String> orderedMsgQueue;
 	private Map<Long, Client> clientIdToClentObjMap;
 	
 	
-	public MessageHandler(BlockingQueue<String> orderedMsgQueue, Map<Long, Client> clientIdToClentObjMap) {
+	public MessageHandler(ConcurrentLinkedQueue<String> orderedMsgQueue, Map<Long, Client> clientIdToClentObjMap) {
 		this.orderedMsgQueue = orderedMsgQueue;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 	}
 	
 	public boolean handleFollow(Message message) throws IOException {
+		System.out.println("Message type Follow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
 		source.subscribe(destination.getId());
@@ -35,6 +36,7 @@ public class MessageHandler implements Runnable{
 	}
 	
 	public boolean handleUnfollow(Message message) {
+		System.out.println("Message type Unfollow detected" + message.getStringMsg() );
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
 		source.unsubscribe(destination.getId());
@@ -42,6 +44,7 @@ public class MessageHandler implements Runnable{
 	}
 	
 	public boolean handleBroadcast(Message message) throws IOException {
+		System.out.println("Message type Broadcast detected" + message.getStringMsg() );
 		Client client;
 		for (Map.Entry<Long, Client> entry : this.clientIdToClentObjMap.entrySet())
 		{	
@@ -60,6 +63,7 @@ public class MessageHandler implements Runnable{
 	
 	
 	public boolean handlePrivateMsg(Message message) throws IOException {
+		System.out.println("Message type PrivateMsg detected" + message.getStringMsg() );
 		Client destination = this.clientIdToClentObjMap.get(message.getDestination());
 		SelectionKey key = destination.getSelectionKey();
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -72,6 +76,7 @@ public class MessageHandler implements Runnable{
 	}
 	
 	public boolean handleStatusUpdate(Message message) throws IOException {
+		System.out.println("Message type Status Update detected" + message.getStringMsg() );
 		Client client;
 		Client source = this.clientIdToClentObjMap.get(message.getSource());
 		LinkedList<Long> subscribers = source.getSubscribers();
@@ -92,6 +97,7 @@ public class MessageHandler implements Runnable{
 
 	
 	public void processMessage(Message message) throws IOException {
+		System.out.println("Processing Message:"+ message.getStringMsg());
 		switch(message.getMsgType()) {
 		case "F":
 			handleFollow(message);
@@ -115,15 +121,18 @@ public class MessageHandler implements Runnable{
 
 	@Override
 	public void run() {
+		System.out.println("Starting the MessageHandler Thread...");
+		String message;
 		while(true) {
-			try {
-				String message = this.orderedMsgQueue.take();
+			while ((message = this.orderedMsgQueue.poll()) != null) {
+				System.out.println("Fetch from queue by MessageSequencer");
 				Message msg = new Message(message);
-				this.processMessage(msg);
-			} catch (InterruptedException | IOException e) {
-				e.printStackTrace();
-			}
-			
+				try {
+					this.processMessage(msg);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	        }
 		}
 	}
 

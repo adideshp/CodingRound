@@ -7,16 +7,16 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ConnectionProcessor implements Runnable{
 
-	private BlockingQueue<SocketChannel> channelQueue;
+	private ConcurrentLinkedQueue<SocketChannel> channelQueue;
 	private Selector channelSelector; 
 	private int clientCount;
 	private Map<Long, Client> clientIdToClentObjMap; // Concurrent hash map
 	
-	public ConnectionProcessor(BlockingQueue<SocketChannel> channelQueue, Selector channelSelector, Map<Long, Client> clientIdToClentObjMap){
+	public ConnectionProcessor(ConcurrentLinkedQueue<SocketChannel> channelQueue, Selector channelSelector, Map<Long, Client> clientIdToClentObjMap){
 		this.channelQueue = channelQueue;
 		this.clientIdToClentObjMap = clientIdToClentObjMap;
 		this.channelSelector = channelSelector;
@@ -36,6 +36,7 @@ public class ConnectionProcessor implements Runnable{
 	
 	
 	public void updateIdForReadReadyClients(Selector channelSelector) throws IOException {
+		System.out.println("Updating ID for ReadReadyClients");
 		int readyChannels = channelSelector.selectNow();
 		if(readyChannels == 0) return;
 		
@@ -49,7 +50,9 @@ public class ConnectionProcessor implements Runnable{
 		    	Client client = (Client) key.attachment();
 		    	long id = Long.parseLong(client.readFromChannel(channel));
 		    	client.setId(id);
+		    	System.out.println("Update successful for Client with ID:" + id);
 		    	this.clientIdToClentObjMap.put(id, client);
+		    	System.out.println("Updated MAP for Client with ID:" + id);
 		    } 
 		    keyIterator.remove();
 	    }
@@ -59,14 +62,15 @@ public class ConnectionProcessor implements Runnable{
 	@Override
 	public void run() {
 		System.out.println("Starting the connection processor worker thread ...");
+		SocketChannel socketChannel;
 		while(true) {
 			try {
-				SocketChannel socketChannel = this.channelQueue.take();
-				System.out.println("Fetched channel from queue");
-				this.createClient(socketChannel,this.channelSelector);
-				this.updateIdForReadReadyClients(channelSelector);
-				
-			} catch (InterruptedException | IOException e) {
+				while ((socketChannel = this.channelQueue.poll()) != null) {
+					System.out.println("Fetched channel from queue");
+					this.createClient(socketChannel, this.channelSelector);
+					this.updateIdForReadReadyClients(channelSelector);
+		        }
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}

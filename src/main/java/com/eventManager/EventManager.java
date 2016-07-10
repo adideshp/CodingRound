@@ -1,22 +1,21 @@
 package main.java.com.eventManager;
 
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EventManager {
 
 	private EventReader eventWorker = null;
-	private BlockingQueue<String> messageQueue; 
+	private ConcurrentLinkedQueue<String> messageQueue; 
 	
 	
-	public EventManager(int port) throws IOException {
-		this.messageQueue = new ArrayBlockingQueue<String>(100);
+	public EventManager(int port, ConcurrentLinkedQueue<String> messageQueue) throws IOException {
+		this.messageQueue = messageQueue;
 		this.eventWorker = new EventReader(port, this.messageQueue);
 	}
 		
 	public void start() {
-		System.out.println("Starting the Events reader...");
+		System.out.println("Starting the EventManager ...");
 		Thread eventWorkerThread  = new Thread(this.eventWorker);
 		eventWorkerThread.start();
 	}

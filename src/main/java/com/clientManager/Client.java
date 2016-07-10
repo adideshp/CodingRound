@@ -51,12 +51,13 @@ public class Client {
 	public String readFromChannel(SocketChannel socketChannel) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(100);
 		char bufChar;
-		String value = null;
+		String value = "";
 		long readSize = socketChannel.read(buffer);
 		if (readSize != -1) {
 			buffer.flip();
 			while (buffer.hasRemaining()) {
 				bufChar = (char) buffer.get();
+				if (bufChar == '\n') {continue;}
 				value += bufChar;
 			}
 		}

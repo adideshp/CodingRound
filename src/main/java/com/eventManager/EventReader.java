@@ -5,17 +5,18 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EventReader implements Runnable{
 	
 	private int tcpPort = 0;
 	private ServerSocketChannel eventReaderSocket = null;
 	private ByteBuffer eventBuf = ByteBuffer.allocate(1024);
-	private BlockingQueue<String> messageQueue;
+	private ConcurrentLinkedQueue<String> messageQueue;
+	
 
 	
-	public EventReader(int tcpPort, BlockingQueue<String> messageQueue) throws IOException {
+	public EventReader(int tcpPort, ConcurrentLinkedQueue<String> messageQueue) throws IOException {
 		this.tcpPort = tcpPort;
 		this.messageQueue = messageQueue;
  	}
@@ -32,8 +33,8 @@ public class EventReader implements Runnable{
 					message += bufChar; 
 				} else {
 					message += '\n';
-					System.out.print(message);
-					this.messageQueue.put(message);
+					this.messageQueue.add(message);
+					System.out.println("Message" + message + " added in queue");
 					message = "";
 				}
 			}
@@ -46,12 +47,11 @@ public class EventReader implements Runnable{
 	@Override
 	public void run() {
 		try{
-			System.out.println("Starting the event reader worker thread ...");
+			System.out.println("Starting the EventReader Thread ...");
             this.eventReaderSocket = ServerSocketChannel.open();
             this.eventReaderSocket.bind(new InetSocketAddress(tcpPort));
             SocketChannel eventReaderSocketChannel = this.eventReaderSocket.accept();
             System.out.println("Event source connected successfully on port :" + this.tcpPort);
-            System.out.println("Contents:\n");
             while(true) {
             	this.tokenize(eventReaderSocketChannel);
     		}

@@ -4,17 +4,17 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ConnectionAcceptor implements Runnable{
 
 	private int port;
 	private ServerSocketChannel serverSocket = null;
-	private BlockingQueue<SocketChannel> channelQueue;
+	private  ConcurrentLinkedQueue<SocketChannel> channelQueue;
 	
 	private int count=0;
 	
-	public ConnectionAcceptor(int port, BlockingQueue<SocketChannel> channelQueue) {
+	public ConnectionAcceptor(int port,  ConcurrentLinkedQueue<SocketChannel> channelQueue) {
 		this.port = port;
 		this.channelQueue = channelQueue;
 	}
@@ -23,7 +23,7 @@ public class ConnectionAcceptor implements Runnable{
 	@Override
 	public void run() {
 		try{
-			System.out.println("Starting the connection acceptor worker thread ...");
+			System.out.println("Starting the ConnectionAcceptor thread ...");
             this.serverSocket = ServerSocketChannel.open();
             this.serverSocket.bind(new InetSocketAddress(this.port));
         } catch(IOException e){
@@ -34,13 +34,13 @@ public class ConnectionAcceptor implements Runnable{
         while(true){
             try{
                 SocketChannel socketChannel = this.serverSocket.accept();
-                System.out.println("Connection accepted: " + socketChannel);
+                System.out.println("Connection accepted");
                 this.count++;
                 System.out.println("Connection Count : " + this.count );
-                this.channelQueue.put(socketChannel);
+                this.channelQueue.add(socketChannel);
                 System.out.println("Channel added to the queue");
                 
-            } catch(IOException | InterruptedException e){
+            } catch(IOException e){
                 e.printStackTrace();
             }
         }
