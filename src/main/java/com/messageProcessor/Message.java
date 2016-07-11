@@ -13,10 +13,11 @@ public class Message {
 	
 	public Message(String message) {
 		this.stringMsg = message;
-		
-		String[] validStr, msgParts;
-		validStr = message.split("\\\n");
-		msgParts = validStr[0].split("\\|");
+		String[] strippedMsgAlpha, strippedMsgBeta, msgParts;
+		strippedMsgAlpha = message.split("\\\n");
+		//Differs on platforms
+		strippedMsgBeta = strippedMsgAlpha[0].split("\\r");
+		msgParts = strippedMsgBeta[0].split("\\|");
 		this.sequenceNum = -1;
 		this.msgType = null;
 		this.source = -1;
@@ -38,7 +39,7 @@ public class Message {
 	}
 	
 	public String getStringMsg() {
-		return this.stringMsg + "\r\n";
+		return this.stringMsg + '\r'+'\n';
 	}
 	
 	public long getSequenceNum() {

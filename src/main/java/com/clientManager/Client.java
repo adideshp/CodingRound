@@ -64,7 +64,7 @@ public class Client {
 			buffer.flip();
 			while (buffer.hasRemaining()) {
 				bufChar = (char) buffer.get();
-				if (bufChar == '\n') {continue;}
+				if (bufChar == '\n' | bufChar == '\r') {continue;}
 				value += bufChar;
 			}
 		}
@@ -74,7 +74,7 @@ public class Client {
 	// writes data to a given channel
 	public int writeToChannel(String msg, SocketChannel socketChannel) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(100);
-		byte[] bytes = msg.getBytes();
+		byte[] bytes = msg.getBytes("UTF-8");
 		buffer.put(bytes);
 		int bytesWritten = socketChannel.write(buffer);
 		return bytesWritten;
