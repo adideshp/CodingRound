@@ -1,4 +1,4 @@
-#Follower Maze : Coding Round
+#Follower Maze : 
 
 I have tried to break down the problem in three subproblems
  1. Problem of managing client connections
